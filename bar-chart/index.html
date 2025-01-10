@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>bar-chart with d3</title>
+</head>
+<body>
+    <p id="message"></p>
+    <script type="module">
+        import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+
+        fetch('https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/GDP-data.json')
+        .then(response => response.json())
+        .then(dataset =>  {
+            const data = dataset.data;
+
+            const w = 500;
+            const h = 200;
+            const padding = 20;
+
+            const svg = d3.select('body')
+                        .append('svg')
+                        .attr('width', w)
+                        .attr('height', h);
+
+            const xScale = d3.scaleLinear()
+                        .domain([0, d3.max(dataset, (d) => )])
+                        .range()
+
+            const yScale = d3.scaleLinear()
+                        .domain([0, d3.max(dataset, (d) => )])
+                        .range()
+
+            const xAxis = d3.axisBottom(xScale);
+            const yAxis = d3.axisBottom(yScale);
+
+            svg.append('g')
+            .attr('id', 'x-axis')
+            .attr('transform', 'translate(0, ' + (h - padding) + ")")
+            .call(xAxis)
+
+            svg.append('g')
+            .attr('id', 'y-axis')
+            .attr('transform', 'translate(0, ' + (h - padding) + ")")
+            .call(yAxis)
+
+            svg.append('rect')
+            .data(data)
+            .enter()
+            .append('rect')
+            .attr('x', (d))
+            .attr('y')
+
+        })
+
+        
+    </script>
+</body>
+</html>
