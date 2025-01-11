@@ -4,8 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>bar-chart with d3</title>
+    <style>
+        .bar {
+            fill: steelblue;
+            transition: al .3s;
+        }
+
+        .bar:hover {
+            opacity: .6;
+        }
+
+        body {
+            background-color: antiquewhite;
+        }
+
+        svg {
+            background-color: white;
+        }
+
+        g {
+            background-color: black;
+        }
+
+        .tick {
+            font-size: 10px;
+        }
+
+        h1 {
+            width: 100%;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
+    <h1>GDP United States</h1>
     <p id="message"></p>
     <script type="module">
         import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
@@ -14,46 +46,72 @@
         .then(response => response.json())
         .then(dataset =>  {
             const data = dataset.data;
+            document.getElementById('message').textContent = "Data loaded successfully!";
 
-            const w = 500;
-            const h = 200;
-            const padding = 20;
+            console.log(dataset);
+
+            const w = 800;
+            const h = 400;
+            const padding = 50;
 
             const svg = d3.select('body')
                         .append('svg')
                         .attr('width', w)
                         .attr('height', h);
 
-            const xScale = d3.scaleLinear()
-                        .domain([0, d3.max(dataset, (d) => )])
-                        .range()
+            const xScale = d3.scaleTime([new Date (data[0][0]), new Date(data[data.length - 1][0])], [padding, w - padding]);
 
             const yScale = d3.scaleLinear()
-                        .domain([0, d3.max(dataset, (d) => )])
-                        .range()
+                        .domain([0, d3.max(data, (data) => data[1])])
+                        .range([h - padding, padding])
 
-            const xAxis = d3.axisBottom(xScale);
-            const yAxis = d3.axisBottom(yScale);
-
+            const xAxis = d3.axisBottom(xScale).tickFormat(d3.timeFormat('%Y'));
             svg.append('g')
             .attr('id', 'x-axis')
-            .attr('transform', 'translate(0, ' + (h - padding) + ")")
+            .attr('class', 'tick')
+            .attr('transform', `translate(0, ${h - padding})`)
             .call(xAxis)
 
+            const yAxis = d3.axisLeft(yScale);
             svg.append('g')
             .attr('id', 'y-axis')
-            .attr('transform', 'translate(0, ' + (h - padding) + ")")
+            .attr('class', 'tick')
+            .attr('transform', `translate(${padding}, 0)`)
             .call(yAxis)
 
-            svg.append('rect')
+            svg.selectAll('rect')
             .data(data)
             .enter()
             .append('rect')
-            .attr('x', (d))
-            .attr('y')
+            .attr('x', (d) => xScale(new Date(d[0])))
+            .attr('y', (d) => yScale(d[1]))
+            .attr('width', (w  - 2 * padding) / data.length - 1)
+            .attr('height', d => h - padding - yScale(d[1]))
+            .attr('class', 'bar')
+            .attr('data-date', d => d[0])
+            .attr('data-gdp', d => d[1])
+            .append('title')
+            .attr('id', 'tooltip')
+            .text(d => {
+                const month = new Date(d[0]).getMonth() + 1;
+                let quarter;
 
+                if(month >= 1 && month <= 3) {
+                    quarter = "Quarter 1"
+                } else if (month >= 4 && month <= 6) {
+                    quarter = "Quarter 2"
+                } else if (month >= 7 && month <= 9) {
+                    quarter = "Quarter 3"
+                } else if (month >= 10 && month <= 12) {
+                    quarter = "Quarter 4"
+                }
+
+                return `${quarter} $${d[1]} Billion`
+            })
         })
-
+        .catch(err => {
+            document.getElementById('message').textContent = "Error loading data: " + err;
+        })
         
     </script>
 </body>
