@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="title">Scatterplot graph</title>
+    <style>
+        .dot {
+            fill: steelblue;
+            stroke: black;
+            stroke-width: 0.5;
+        }
+
+        .legend {
+            font-size: 12px;
+        }
+
+        .tooltip {
+            position: absolute;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            padding: 5px;
+            border-radius: 3px;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        body {
+            background-color: #f4f4f4;
+        }
+
+        h1 {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Doping in Professional Bicycle Racing</h1>
+    <div id="tooltip" class="tooltip"></div>
+    <script type="module">
+        import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+
+        fetch('https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/cyclist-data.json')
+        .then(response => response.json())
+        .then(dataset => {
+            
+            const w = 800;
+            const h = 400;
+            const padding = 50;
+
+            dataset.forEach(d => {
+                const timeParts = d.Time.split(':').map(Number);
+                d.Seconds = timeParts[0] * 60 + timeParts[1];
+            })
+
+            const svg = d3.select('body')
+                        .append('svg')
+                        .attr('width', w)
+                        .attr('height', h);
+
+            const xScale = d3.scaleTime([
+                                new Date(d3.min(dataset, data => data.Year) - 1, 0, 1), 
+                                new Date(d3.max(dataset, data => data.Year) + 1, 0, 1)
+                            ], [padding, w - padding])
+
+            const yScale = d3.scaleTime([d3.max(dataset, data => data.Seconds) * 1000, d3.min(dataset, data => data.Seconds) * 1000],[h - padding, padding])
+
+            const xAxis = d3.axisBottom(xScale).tickFormat(d3.timeFormat('%Y'));
+            svg.append('g')
+            .attr('id', 'x-axis')
+            .attr('transform', `translate(0, ${h - padding})`)
+            .call(xAxis);
+
+            const yAxis = d3.axisLeft(yScale).tickFormat(d3.timeFormat('%M:%S'));
+            svg.append('g')
+            .attr('id', 'y-axis')
+            .attr('transform', `translate(${padding}, 0)`)
+            .call(yAxis)
+
+            const tooltip = d3.select('#tooltip')
+
+            svg.selectAll('circle')
+            .data(dataset)
+            .enter()
+            .append('circle')
+            .attr('class', 'dot')
+            .attr('cx', data => xScale(new Date(data.Year, 0, 1)))
+            .attr('cy', data => yScale(data.Seconds * 1000))
+            .attr('r', 5)
+            .attr('data-xvalue', data => data.Year)
+            .attr('data-yvalue', data => new Date(data.Seconds * 1000).toISOString())
+            .on('mouseover', (event, data) => {
+                tooltip.style('opacity', 1)
+                    .style('left', `${event.pageX + 10}px`)
+                    .style('top', `${event.pageY + 30}px`)
+                    .attr('data-year', data.Year)
+                    .html(`
+                        <strong>${data.Name} (${data.Nationality})</strong><br>
+                        Year: ${data.Year}<br>
+                        Time: ${data.Time}<br>
+                        ${data.Doping ? `<em>${data.Doping}</em>` : 'No doping allegations'}
+                    `)
+            })
+            .on('mouseout', () => tooltip.style('opacity', 0))
+
+            const legend = svg.append('g')
+                            .attr('id', 'legend')
+
+            const legendData = [
+                { color: 'steelblue', text: 'No doping allegations'},
+                { color: 'orange', text: 'Riders with doping allegations'}
+            ]
+
+            legendData.forEach((data, i) => {
+                legend.append('rect')
+                .attr('x', w - 200)
+                .attr('y', padding + i * 20)
+                .attr('width', 15)
+                .attr('height', 15)
+                .attr('fill', data.color);
+
+                legend.append('text')
+                .attr('x', w - 180)
+                .attr('y', padding + i * 20 + 12)
+                .text(data.text)
+                .attr('class', 'legend')
+            })
+
+            svg.selectAll('dot')
+                .filter(data => data.Doping)
+                .attr('fill', 'orange')
+        })
+        .catch(err => {
+            console.log('error loading gate', err)
+        })
+    </script>
+    <script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
+</body>
+</html>
